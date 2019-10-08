@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
@@ -12,8 +12,26 @@ import { Link } from "react-router-dom";
 import { auth } from "./firebase";
 
 export function SignIn(props) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(u => {
+      if (u) {
+        props.history.push("/app");
+      }
+      //do something
+    });
+    return unsubscribe;
+  }, [props.history]);
+
   const handleSignIn = () => {
-    auth.signInWithEmailAndPassword(email, password);
+    auth
+      .signInWithEmailAndPassword(email, password)
+      .then(() => {})
+      .catch(error => {
+        alert(error.message);
+      });
   };
 
   return (
@@ -27,11 +45,23 @@ export function SignIn(props) {
       </AppBar>
       <div style={{ display: "flex", justifyContent: "center" }}>
         <Paper style={{ width: "480px", marginTop: "50px", padding: "30px" }}>
-          <TextField placeholder="Email" fullWidth={true} />
           <TextField
+            placeholder="Email"
+            fullWidth={true}
+            value={email}
+            onChange={e => {
+              setEmail(e.target.value);
+            }}
+          />
+          <TextField
+            type="Password"
             placeholder="Password"
             fullWidth={true}
             style={{ marginTop: "30px" }}
+            value={password}
+            onChange={e => {
+              setPassword(e.target.value);
+            }}
           />
           <div
             style={{
@@ -44,13 +74,7 @@ export function SignIn(props) {
             <Typography>
               Don't have an account? <Link to="/signup">Sign up!</Link>
             </Typography>
-            <Button
-              color="primary"
-              variant="contained"
-              to="/app"
-              component={Link}
-              onClick={handleSignIn}
-            >
+            <Button color="primary" variant="contained" onClick={handleSignIn}>
               Sign In
             </Button>
           </div>
@@ -61,6 +85,27 @@ export function SignIn(props) {
 }
 
 export function SignUp(props) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(u => {
+      if (u) {
+        props.history.push("/app");
+      }
+      //do something
+    });
+    return unsubscribe;
+  }, [props.history]);
+
+  const handleSignUp = () => {
+    auth
+      .createUserWithEmailAndPassword(email, password)
+      .then(() => {})
+      .catch(error => {
+        alert(error.message);
+      });
+  };
   return (
     <div>
       <AppBar position="static" color="primary">
@@ -72,11 +117,23 @@ export function SignUp(props) {
       </AppBar>
       <div style={{ display: "flex", justifyContent: "center" }}>
         <Paper style={{ width: "480px", marginTop: "50px", padding: "30px" }}>
-          <TextField placeholder="Email" fullWidth={true} />
           <TextField
+            placeholder="Email"
+            fullWidth={true}
+            value={email}
+            onChange={e => {
+              setEmail(e.target.value);
+            }}
+          />
+          <TextField
+            type="password"
             placeholder="Password"
             fullWidth={true}
             style={{ marginTop: "30px" }}
+            value={password}
+            onChange={e => {
+              setPassword(e.target.value);
+            }}
           />
           <div
             style={{
@@ -89,12 +146,7 @@ export function SignUp(props) {
             <Typography>
               Already have an account? <Link to="/">Sign In!</Link>
             </Typography>
-            <Button
-              color="primary"
-              variant="contained"
-              to="/app"
-              component={Link}
-            >
+            <Button color="primary" variant="contained" onClick={handleSignUp}>
               Sign Up
             </Button>
           </div>
@@ -106,6 +158,34 @@ export function SignUp(props) {
 
 export function App(props) {
   const [drawer_open, setDrawerOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(u => {
+      if (u) {
+        setUser(u);
+      } else {
+        props.history.push("/");
+      }
+      //do something
+    });
+    return unsubscribe;
+  }, [props.history]);
+
+  const handleSignOut = () => {
+    auth
+      .signOut()
+      .then(() => {
+        props.history.push("/");
+      })
+      .catch(error => {
+        alert(error.message);
+      });
+  };
+
+  if (!user) {
+    return <div />;
+  }
   return (
     <div>
       <AppBar position="static" color="primary">
@@ -126,10 +206,9 @@ export function App(props) {
             My App
           </Typography>
           <Typography color="inherit" style={{ marginRight: "30px" }}>
-            {" "}
-            Hi! johndavidlee1@gmail.com
+            Hi! {user.email}
           </Typography>
-          <Button color="inherit" to="/" component={Link}>
+          <Button color="inherit" onClick={handleSignOut}>
             {" "}
             Sign Out
           </Button>
